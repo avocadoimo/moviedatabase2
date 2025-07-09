@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}映画検索{% endblock %}
+
+{% block head %}
+<style>
+    .search-form {
+        margin-bottom: 30px;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .search-form input[type="text"] {
+        padding: 8px;
+        margin-right: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        width: 200px;
+    }
+
+    .search-form input[type="submit"] {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        background-color: #1a73e8;
+        color: white;
+        cursor: pointer;
+    }
+
+    .search-form input[type="submit"]:hover {
+        background-color: #1558b0;
+    }
+
+    .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .movie-card {
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        padding: 16px;
+        text-align: center;
+    }
+
+    .movie-card img {
+        height: 280px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .movie-card h3 {
+        margin: 10px 0 5px;
+        font-size: 1.1em;
+        color: #333;
+    }
+
+    .movie-card p {
+        margin: 4px 0;
+        font-size: 0.9em;
+        color: #666;
+    }
+
+    .sort-links {
+        margin: 10px 0 20px;
+        font-size: 0.9em;
+    }
+
+    .sort-links a {
+        margin-right: 15px;
+        color: #1a73e8;
+    }
+
+    .section-title {
+        font-size: 1.3em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        border-left: 4px solid #1a73e8;
+        padding-left: 10px;
+    }
+
+    .view-toggle {
+        margin-bottom: 10px;
+    }
+
+    .view-toggle a {
+        padding: 6px 12px;
+        background-color: #f5f5f5;
+        border-radius: 6px;
+        color: #333;
+        text-decoration: none;
+        font-size: 0.9em;
+        margin-bottom: 10px;
+        display: inline-block;
+        border: 1px solid #ccc;
+    }
+
+    .view-toggle a:hover {
+        background-color: #e0e0e0;
+    }
+
+    .pagination {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .pagination a {
+        margin: 0 10px;
+        text-decoration: none;
+        color: #1a73e8;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="search-form">
+    <form method="get">
+        年: <input type="text" name="year" value="{{ request.args.get('year', '') }}">
+        タイトル: <input type="text" name="title" value="{{ request.args.get('title', '') }}">
+        配給会社: <input type="text" name="distributor" value="{{ request.args.get('distributor', '') }}">
+        区分:
+        <select name="category">
+            <option value="">すべて</option>
+            <option value="邦画" {% if request.args.get('category') == '邦画' %}selected{% endif %}>邦画</option>
+            <option value="洋画" {% if request.args.get('category') == '洋画' %}selected{% endif %}>洋画</option>
+        </select>
+        <br><br>
+        興収（億円）: <input type="text" name="min_revenue" placeholder="最小" value="{{ request.args.get('min_revenue', '') }}"> ～ 
+        <input type="text" name="max_revenue" placeholder="最大" value="{{ request.args.get('max_revenue', '') }}">
+        <input type="submit" value="検索">
+    </form>
+</div>
+
+
+<a id="results"></a>
+<div class="view-toggle">
+    <a href="{{ url_for('table_view',
+        year=request.args.get('year'),
+        title=request.args.get('title'),
+        distributor=request.args.get('distributor'),
+        min_revenue=request.args.get('min_revenue'),
+        max_revenue=request.args.get('max_revenue'),
+        director=request.args.get('director'),
+        actor=request.args.get('actor'),
+        scriptwriter=request.args.get('scriptwriter'),
+        producer=request.args.get('producer'),
+        order_by=order_by,
+        sort=sort) }}">📋 テーブル表示に切り替え</a>
+</div>
+
+<div class="sort-links">
+    並び替え:
+    {% set sort_icon = {'desc': '▼', 'asc': '▲'} %}
+    {% set next_sort = 'desc' if sort == 'asc' else 'desc' %}
+
+    {% for column, label in [ ('release_date', '公開日'), ('title', '作品名'), ('revenue', '興収')] %}
+        {% set args_copy = request.args.to_dict() %}
+        {% set current_sort = 'desc' %}
+        {% if order_by == column %}
+            {% if sort == 'desc' %}
+                {% set current_sort = 'asc' %}
+            {% endif %}
+        {% endif %}
+        <a href="{{ url_for('search', 
+            year=args_copy.get('year'),
+            title=args_copy.get('title'),
+            distributor=args_copy.get('distributor'),
+            min_revenue=args_copy.get('min_revenue'),
+            max_revenue=args_copy.get('max_revenue'),
+            director=args_copy.get('director'),
+            actor=args_copy.get('actor'),
+            scriptwriter=args_copy.get('scriptwriter'),
+            producer=args_copy.get('producer'),
+            order_by=column,
+            sort=current_sort) }}#results">
+            {{ label }}{% if order_by == column %}{{ sort_icon[sort] }}{% endif %}
+        </a>
+    {% endfor %}
+</div>
+
+<div class="section-title">検索結果</div>
+
+<div class="movie-grid">
+    {% for m in movies %}
+    <div class="movie-card">
+        <a href="{{ url_for('movie_detail', movie_id=m.id) }}">
+            <img src="{{ url_for('static', filename='posters/' ~ m.movie_id|string ~ '.jpg') }}" alt="{{ m.title }}">
+        </a>
+        <h3>{{ m.title }}</h3>
+        <p>{{ m.release_date }}</p>
+        <p>興収: {{ m.revenue }} 億円</p>
+        <p>{{ m.distributor }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="pagination">
+    {% set args_copy = request.args.to_dict() %}
+    {% if pagination.has_prev %}
+        <a href="{{ url_for('search', page=pagination.prev_num,
+            year=args_copy.get('year'),
+            title=args_copy.get('title'),
+            distributor=args_copy.get('distributor'),
+            min_revenue=args_copy.get('min_revenue'),
+            max_revenue=args_copy.get('max_revenue'),
+            director=args_copy.get('director'),
+            actor=args_copy.get('actor'),
+            scriptwriter=args_copy.get('scriptwriter'),
+            producer=args_copy.get('producer'),
+            order_by=order_by,
+            sort=sort) }}#results">← 前へ</a>
+    {% endif %}
+    <span>ページ {{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+        <a href="{{ url_for('search', page=pagination.next_num,
+            year=args_copy.get('year'),
+            title=args_copy.get('title'),
+            distributor=args_copy.get('distributor'),
+            min_revenue=args_copy.get('min_revenue'),
+            max_revenue=args_copy.get('max_revenue'),
+            director=args_copy.get('director'),
+            actor=args_copy.get('actor'),
+            scriptwriter=args_copy.get('scriptwriter'),
+            producer=args_copy.get('producer'),
+            order_by=order_by,
+            sort=sort) }}#results">次へ →</a>
+    {% endif %}
+</div>
+
+{% endblock %}

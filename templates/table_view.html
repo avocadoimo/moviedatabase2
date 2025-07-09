@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}興行収入データベース{% endblock %}
+
+{% block content %}
+
+<h2>🎬 興行収入データベース</h2>
+
+<!-- 検索フォーム -->
+<form method="get" style="margin-bottom: 20px;">
+    年: <input type="text" name="year" value="{{ request.args.get('year', '') }}">
+    タイトル: <input type="text" name="title" value="{{ request.args.get('title', '') }}">
+    配給会社: <input type="text" name="distributor" value="{{ request.args.get('distributor', '') }}">
+    <br><br>
+    興収（億円）: <input type="text" name="min_revenue" placeholder="最小" value="{{ request.args.get('min_revenue', '') }}">
+    ～ <input type="text" name="max_revenue" placeholder="最大" value="{{ request.args.get('max_revenue', '') }}">
+    <br><br>
+    監督名: <input type="text" name="director" value="{{ request.args.get('director', '') }}">
+    キャスト名: <input type="text" name="actor" value="{{ request.args.get('actor', '') }}">
+    <input type="submit" value="検索" class="button">
+</form>
+
+<!-- 🔁 カード表示への切り替えリンク -->
+<div style="margin-bottom: 10px;">
+    <a href="{{ url_for('search',
+        year=request.args.get('year'),
+        title=request.args.get('title'),
+        distributor=request.args.get('distributor'),
+        min_revenue=request.args.get('min_revenue'),
+        max_revenue=request.args.get('max_revenue'),
+        director=request.args.get('director'),
+        actor=request.args.get('actor'),
+        order_by=order_by,
+        sort=sort) }}"
+       style="padding: 6px 12px; background-color: #f5f5f5; border-radius: 6px; color: #333; text-decoration: none; border: 1px solid #ccc;">
+       🖼 カード表示に切り替え
+    </a>
+</div>
+
+<!-- 並び替え -->
+<table style="width: 100%; border-collapse: collapse; background-color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <thead>
+        <tr style="background-color: #f0f0f0;">
+            {% set sort_icon = {'asc': '▲', 'desc': '▼'} %}
+            {% set next_sort = 'asc' if sort == 'desc' else 'desc' %}
+
+            {% macro sort_link(column, label) %}
+            <th style="padding: 10px; border: 1px solid #ccc;">
+                <a href="{{ url_for('table_view',
+                    year=request.args.get('year'),
+                    title=request.args.get('title'),
+                    distributor=request.args.get('distributor'),
+                    min_revenue=request.args.get('min_revenue'),
+                    max_revenue=request.args.get('max_revenue'),
+                    director=request.args.get('director'),
+                    actor=request.args.get('actor'),
+                    order_by=column,
+                    sort=(next_sort if order_by == column else 'asc')) }}">
+                    {{ label }}{% if order_by == column %}{{ sort_icon[sort] }}{% endif %}
+                </a>
+            </th>
+            {% endmacro %}
+
+            {{ sort_link('year', '年') }}
+            {{ sort_link('release_date', '公開日') }}
+            {{ sort_link('title', '作品名') }}
+            {{ sort_link('revenue', '興収(億円)') }}
+            {{ sort_link('category', '区分') }}
+            {{ sort_link('distributor', '配給会社') }}
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in movies %}
+        <tr>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ m.year }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ m.release_date }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">
+                <a href="{{ url_for('movie_detail', movie_id=m.id) }}">{{ m.title }}</a>
+            </td>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ m.revenue }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ m.category }}</td>
+            <td style="padding: 10px; border: 1px solid #ccc;">{{ m.distributor }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
