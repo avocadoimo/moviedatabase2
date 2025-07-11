@@ -35,6 +35,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+
 class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     movie_id = db.Column(db.String)
@@ -1276,6 +1277,10 @@ if __name__ == "__main__":
     # アプリケーション起動時にデータベースとトレンドマネージャーを初期化
     init_database()
     init_trending_manager()
+    
+    # 🔽 ここでデータベースのテーブルを作成
+    with app.app_context():
+        db.create_all()
     
     print("✅ 初期化完了！ブラウザで http://localhost:5000 にアクセスしてください")
     app.run(host='0.0.0.0', port=5000, debug=True)
