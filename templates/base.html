@@ -492,7 +492,7 @@
                 {% if config.get('LOGO_IMAGE') %}
                     <img src="{{ url_for('static', filename='banner.png') }}" alt="映画データベース" loading="eager">
                 {% else %}
-                    <div class="logo-text">🎬 映画データベース</div>
+                    <div class="logo-text">映画データベース</div>
                 {% endif %}
             </a>
             
@@ -500,32 +500,31 @@
                 <a href="{{ url_for('search') }}" 
                    class="nav-button nav-home {% if request.endpoint == 'search' %}active{% endif %}" 
                    aria-label="ホームページ">
-                    🏠 ホーム
+                    ホーム
                 </a>
                 
                 <a href="{{ url_for('table_view') }}" 
                    class="nav-button nav-database {% if request.endpoint == 'table_view' %}active{% endif %}" 
                    aria-label="データベース一覧">
-                    📊 データベース
+                    データベース
                 </a>
                 
                 <a href="{{ url_for('articles') }}" 
-                   class="nav-button nav-articles new-feature {% if request.endpoint == 'articles' %}active{% endif %}" 
+                   class="nav-button nav-articles  {% if request.endpoint == 'articles' %}active{% endif %}" 
                    aria-label="映画記事・コラム">
-                    📰 記事
+                    記事
                 </a>
                 
                 <a href="{{ url_for('movie_chat') }}" 
-                   class="nav-button nav-chat new-feature {% if request.endpoint == 'movie_chat' %}active{% endif %}" 
+                   class="nav-button nav-chat {% if request.endpoint == 'movie_chat' %}active{% endif %}" 
                    aria-label="映画分析AIチャット">
-                    🤖 AI分析
+                    AI分析
                 </a>
                 
                 <a href="{{ url_for('sns_ranking') }}" 
-                   class="nav-button nav-trending new-feature {% if request.endpoint == 'sns_ranking' %}active{% endif %}" 
+                   class="nav-button nav-trending  {% if request.endpoint == 'sns_ranking' %}active{% endif %}" 
                    aria-label="SNSトレンドランキング">
-                    📈 トレンド
-                    <span class="badge" id="trendingCount">5</span>
+                    トレンド
                 </a>
             </nav>
         </div>

@@ -17,7 +17,6 @@ from urllib.parse import quote
 
 app = Flask(__name__)
 
-
 # セッション設定
 app.secret_key = "movie_admin_secret_key_1529"
 app.permanent_session_lifetime = timedelta(hours=24)
@@ -660,7 +659,7 @@ def search_suggestions():
                 Movie.distributor.contains(term), Movie.distributor.isnot(None)
             ).distinct().limit(10).all()
             suggestions = [r[0] for r in results if r[0]]
-        elif query_type == 'genre':  # ← ジャンル検索候補追加
+        elif query_type == 'genre':  # ジャンル検索候補追加
             results = db.session.query(Movie.genre).filter(
                 Movie.genre.contains(term), Movie.genre.isnot(None)
             ).distinct().limit(10).all()
@@ -693,7 +692,7 @@ def search():
     actor = request.args.get('actor')
     scriptwriter = request.args.get('scriptwriter')
     producer = request.args.get('producer')
-    genre = request.args.get('genre')
+    genre = request.args.get('genre')  # ジャンル検索追加
     category = request.args.get('category')
     order_by = request.args.get('order_by', 'revenue')
     sort = request.args.get('sort', 'desc')
@@ -730,6 +729,20 @@ def search():
 
     if category:
         query = query.filter(Movie.category == category)
+    
+    # ジャンル検索処理を追加
+    if genre:
+        # 複数のジャンルが含まれる可能性があるため、LIKE検索を使用
+        query = query.filter(
+            or_(
+                Movie.genre.like(f"%{genre}%"),
+                Movie.genre.like(f"{genre},%"),
+                Movie.genre.like(f"%, {genre},%"),
+                Movie.genre.like(f"%, {genre}"),
+                Movie.genre == genre
+            )
+        )
+    
     if min_revenue:
         query = query.filter(Movie.revenue >= float(min_revenue))
     if max_revenue:
@@ -748,6 +761,8 @@ def search():
     if movies:
         if order_by == 'release_date':
             movies.sort(key=lambda m: parse_date(m.release_date), reverse=(sort == 'desc'))
+        elif order_by == 'genre':  # ジャンルソート追加
+            movies.sort(key=lambda m: m.genre or '', reverse=(sort == 'desc'))
         elif hasattr(Movie, order_by):
             sample = getattr(movies[0], order_by, '')
             if isinstance(sample, (float, int)):
@@ -802,6 +817,7 @@ def table_view():
     actor = request.args.get('actor')
     scriptwriter = request.args.get('scriptwriter')
     producer = request.args.get('producer')
+    genre = request.args.get('genre')  # ジャンル検索追加
     order_by = request.args.get('order_by', 'release_date')
     sort = request.args.get('sort', 'desc')
 
@@ -819,6 +835,19 @@ def table_view():
                 Movie.distributor.like(f"%{distributor}%")
             )
         )
+    
+    # ジャンル検索処理を追加
+    if genre:
+        query = query.filter(
+            or_(
+                Movie.genre.like(f"%{genre}%"),
+                Movie.genre.like(f"{genre},%"),
+                Movie.genre.like(f"%, {genre},%"),
+                Movie.genre.like(f"%, {genre}"),
+                Movie.genre == genre
+            )
+        )
+    
     if min_revenue:
         query = query.filter(Movie.revenue >= float(min_revenue))
     if max_revenue:
@@ -835,6 +864,9 @@ def table_view():
     if order_by == 'release_date':
         movies = query.all()
         movies.sort(key=lambda m: parse_date(m.release_date), reverse=(sort == 'desc'))
+    elif order_by == 'genre':  # ジャンルソート追加
+        movies = query.all()
+        movies.sort(key=lambda m: m.genre or '', reverse=(sort == 'desc'))
     elif hasattr(Movie, order_by):
         column = getattr(Movie, order_by)
         if sort == 'asc':
@@ -1000,7 +1032,7 @@ def word_cloud_api(movie_title):
     word_cloud_data = trending_manager.scrape_eiga_com_reviews(movie_title)
     return jsonify(word_cloud_data)
 
-# ===== 記事管理機能（app.py の最後に追加） =====
+# ===== 記事管理機能 =====
 
 @app.route("/admin")
 @admin_required
@@ -1213,6 +1245,7 @@ def admin_delete_article(article_id):
         return jsonify({'success': False, 'message': f'削除に失敗しました: {str(e)}'})
 
 @app.route("/admin/articles/<int:article_id>/toggle-featured", methods=['POST'])
+@admin_required
 def admin_toggle_featured(article_id):
     """注目記事の切り替え"""
     try:
@@ -1235,10 +1268,6 @@ def admin_toggle_featured(article_id):
         db.session.rollback()
         return jsonify({'success': False, 'message': f'切り替えに失敗しました: {str(e)}'})
 
-# ===== 記事管理機能ここまで =====
-# ===== 管理者認証機能（app.py の最後に追加） =====
-
-
 
 if __name__ == "__main__":
     print("🚀 映画データベース アプリケーション起動中...")
@@ -1249,4 +1278,4 @@ if __name__ == "__main__":
     init_trending_manager()
     
     print("✅ 初期化完了！ブラウザで http://localhost:5000 にアクセスしてください")
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

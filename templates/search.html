@@ -1,3 +1,4 @@
+
 {% extends "base.html" %}
 
 {% block title %}映画検索{% endblock %}
@@ -12,7 +13,7 @@
         box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
-    .search-form input[type="text"] {
+    .search-form input[type="text"], .search-form select {
         padding: 8px;
         margin-right: 10px;
         border-radius: 6px;
@@ -45,19 +46,27 @@
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         padding: 16px;
         text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .movie-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     .movie-card img {
-        height: 280px;
+        height: 350px;
         object-fit: cover;
         border-radius: 8px;
         margin-bottom: 10px;
+        width: 100%;
     }
 
     .movie-card h3 {
         margin: 10px 0 5px;
         font-size: 1.1em;
         color: #333;
+        line-height: 1.3;
     }
 
     .movie-card p {
@@ -74,6 +83,11 @@
     .sort-links a {
         margin-right: 15px;
         color: #1a73e8;
+        text-decoration: none;
+    }
+
+    .sort-links a:hover {
+        text-decoration: underline;
     }
 
     .section-title {
@@ -114,11 +128,24 @@
         text-decoration: none;
         color: #1a73e8;
     }
+
+    .pagination a:hover {
+        text-decoration: underline;
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 767px) {
+        .search-form input[type="text"], 
+        .search-form select {
+            width: 100%;
+            margin-right: 0;
+            margin-bottom: 8px;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-
 
 <div class="search-form">
     <form method="get">
@@ -143,13 +170,14 @@
     </form>
 </div>
 
-
 <a id="results"></a>
 <div class="view-toggle">
     <a href="{{ url_for('table_view',
         year=request.args.get('year'),
         title=request.args.get('title'),
         distributor=request.args.get('distributor'),
+        category=request.args.get('category'),
+        genre=request.args.get('genre'),
         min_revenue=request.args.get('min_revenue'),
         max_revenue=request.args.get('max_revenue'),
         director=request.args.get('director'),
@@ -157,7 +185,7 @@
         scriptwriter=request.args.get('scriptwriter'),
         producer=request.args.get('producer'),
         order_by=order_by,
-        sort=sort) }}">📋 テーブル表示に切り替え</a>
+        sort=sort) }}">テーブル表示に切り替え</a>
 </div>
 
 <div class="sort-links">
@@ -165,7 +193,7 @@
     {% set sort_icon = {'desc': '▼', 'asc': '▲'} %}
     {% set next_sort = 'desc' if sort == 'asc' else 'desc' %}
 
-    {% for column, label in [ ('release_date', '公開日'), ('title', '作品名'), ('revenue', '興収')] %}
+    {% for column, label in [('release_date', '公開日'), ('title', '作品名'), ('revenue', '興収'), ('genre', 'ジャンル')] %}
         {% set args_copy = request.args.to_dict() %}
         {% set current_sort = 'desc' %}
         {% if order_by == column %}
@@ -177,6 +205,8 @@
             year=args_copy.get('year'),
             title=args_copy.get('title'),
             distributor=args_copy.get('distributor'),
+            category=args_copy.get('category'),
+            genre=args_copy.get('genre'),
             min_revenue=args_copy.get('min_revenue'),
             max_revenue=args_copy.get('max_revenue'),
             director=args_copy.get('director'),
@@ -190,13 +220,20 @@
     {% endfor %}
 </div>
 
-<div class="section-title">検索結果</div>
+<div class="section-title">
+    検索結果
+    {% if total_results %}
+        <span style="font-size: 0.8em; color: #666;">({{ total_results }} 件)</span>
+    {% endif %}
+</div>
 
 <div class="movie-grid">
     {% for m in movies %}
     <div class="movie-card">
         <a href="{{ url_for('movie_detail', movie_id=m.id) }}">
-            <img src="{{ url_for('static', filename='posters/' ~ m.movie_id|string ~ '.jpg') }}" alt="{{ m.title }}">
+            <img src="{{ url_for('static', filename='posters/' ~ m.movie_id|string ~ '.jpg') }}" 
+                 alt="{{ m.title }}" 
+                 onerror="this.style.display='none'">
         </a>
         <h3>{{ m.title }}</h3>
         <p>{{ m.release_date }}</p>
@@ -206,6 +243,13 @@
     {% endfor %}
 </div>
 
+{% if not movies %}
+<div style="text-align: center; padding: 40px; color: #666;">
+    <h3>検索結果が見つかりませんでした</h3>
+    <p>検索条件を変更して再度お試しください。</p>
+</div>
+{% endif %}
+
 <div class="pagination">
     {% set args_copy = request.args.to_dict() %}
     {% if pagination.has_prev %}
@@ -213,7 +257,8 @@
             year=args_copy.get('year'),
             title=args_copy.get('title'),
             distributor=args_copy.get('distributor'),
-            category=args_copy.get('category'),  
+            category=args_copy.get('category'),
+            genre=args_copy.get('genre'),
             min_revenue=args_copy.get('min_revenue'),
             max_revenue=args_copy.get('max_revenue'),
             director=args_copy.get('director'),
@@ -229,7 +274,8 @@
             year=args_copy.get('year'),
             title=args_copy.get('title'),
             distributor=args_copy.get('distributor'),
-            category=args_copy.get('category'), 
+            category=args_copy.get('category'),
+            genre=args_copy.get('genre'),
             min_revenue=args_copy.get('min_revenue'),
             max_revenue=args_copy.get('max_revenue'),
             director=args_copy.get('director'),
@@ -240,6 +286,5 @@
             sort=sort) }}#results">次へ →</a>
     {% endif %}
 </div>
-
 
 {% endblock %}

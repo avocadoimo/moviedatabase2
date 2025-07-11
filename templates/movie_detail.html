@@ -38,6 +38,45 @@
         color: #444;
     }
 
+    /* ジャンルタグのスタイル */
+    .genre-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+
+    .genre-tag {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .genre-tag:hover {
+        background: linear-gradient(135deg, #5a6fd8, #6b42b3);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        color: white;
+    }
+
+    .genre-tag.action { background: linear-gradient(135deg, #ff6b6b, #ee5a52); }
+    .genre-tag.drama { background: linear-gradient(135deg, #4ecdc4, #44a08d); }
+    .genre-tag.comedy { background: linear-gradient(135deg, #ffe259, #ffc845); color: #333; }
+    .genre-tag.animation { background: linear-gradient(135deg, #a8e6cf, #7fcdcd); color: #333; }
+    .genre-tag.romance { background: linear-gradient(135deg, #ff8a80, #ff5722); }
+    .genre-tag.thriller { background: linear-gradient(135deg, #424242, #212121); }
+    .genre-tag.horror { background: linear-gradient(135deg, #8e24aa, #5e35b1); }
+    .genre-tag.scifi { background: linear-gradient(135deg, #29b6f6, #0277bd); }
+    .genre-tag.fantasy { background: linear-gradient(135deg, #ba68c8, #9c27b0); }
+
     .copyright {
         font-size: 0.8em;
         color: #777;
@@ -58,6 +97,41 @@
 
     .back-button:hover {
         background-color: #1558b0;
+    }
+
+    /* リンク付きアイテムのスタイル */
+    .clickable-item {
+        color: #1a73e8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .clickable-item:hover {
+        color: #1558b0;
+        text-decoration: underline;
+    }
+
+    /* セクションの視覚的改善 */
+    .section {
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .section:last-child {
+        border-bottom: none;
+    }
+
+    .section h2 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 1.1em;
+        color: #333;
+        margin-bottom: 8px;
+    }
+
+    .section-icon {
+        font-size: 1.2em;
     }
 </style>
 {% endblock %}
@@ -94,13 +168,25 @@
         <p>
             {% if movie.distributor %}
                 {% for dist in movie.distributor.split('、') %}
-                    <a href="{{ url_for('search', distributor=dist.strip()) }}">{{ dist.strip() }}</a>{% if not loop.last %}、{% endif %}
+                    <a href="{{ url_for('search', distributor=dist.strip()) }}" class="clickable-item">{{ dist.strip() }}</a>{% if not loop.last %}、{% endif %}
                 {% endfor %}
             {% else %}
                 情報なし
             {% endif %}
         </p>
     </div>
+
+    <!-- ジャンル情報（強化版） -->
+   {% if movie.genre %}
+    <div class="section">
+        <h2>ジャンル</h2>
+        <p>
+            {% for genre_item in movie.genre.split(',') %}
+                <a href="{{ url_for('search', genre=genre_item.strip()) }}" class="clickable-item">{{ genre_item.strip() }}</a>{% if not loop.last %}、{% endif %}
+            {% endfor %}
+        </p>
+    </div>
+    {% endif %}
 
     <div class="section">
         <h2>あらすじ</h2>
@@ -110,14 +196,14 @@
     {% if movie.director %}
     <div class="section">
         <h2>監督</h2>
-        <p><a href="{{ url_for('search', director=movie.director) }}">{{ movie.director }}</a></p>
+        <p><a href="{{ url_for('search', director=movie.director) }}" class="clickable-item">{{ movie.director }}</a></p>
     </div>
     {% endif %}
 
     {% if movie.scriptwriter %}
     <div class="section">
         <h2>脚本</h2>
-        <p><a href="{{ url_for('search', scriptwriter=movie.scriptwriter) }}">{{ movie.scriptwriter }}</a></p>
+        <p><a href="{{ url_for('search', scriptwriter=movie.scriptwriter) }}" class="clickable-item">{{ movie.scriptwriter }}</a></p>
     </div>
     {% endif %}
 
@@ -131,7 +217,7 @@
     {% if movie.producer %}
     <div class="section">
         <h2>プロデューサー</h2>
-        <p><a href="{{ url_for('search', producer=movie.producer) }}">{{ movie.producer }}</a></p>
+        <p><a href="{{ url_for('search', producer=movie.producer) }}" class="clickable-item">{{ movie.producer }}</a></p>
     </div>
     {% endif %}
 
@@ -140,19 +226,7 @@
         <h2>キャスト</h2>
         <p>
             {% for actor in movie.actor.split(',') %}
-                <a href="{{ url_for('search', actor=actor.strip()) }}">{{ actor.strip() }}</a>{% if not loop.last %}、{% endif %}
-            {% endfor %}
-        </p>
-    </div>
-    {% endif %}
-
-    <!-- ジャンル情報（存在しない場合の安全な処理） -->
-    {% if movie.genre %}
-    <div class="section">
-        <h2>ジャンル</h2>
-        <p>
-            {% for genre_item in movie.genre.split(',') %}
-                <span class="genre-tag">{{ genre_item.strip() }}</span>{% if not loop.last %}、{% endif %}
+                <a href="{{ url_for('search', actor=actor.strip()) }}" class="clickable-item">{{ actor.strip() }}</a>{% if not loop.last %}、{% endif %}
             {% endfor %}
         </p>
     </div>
@@ -163,6 +237,31 @@
 <script>
     window.addEventListener("load", function() {
         window.scrollTo(0, 165);  // ← ページ読み込み直後に200px下にピタッと表示
+    });
+
+    // ジャンルタグのアニメーション
+    document.addEventListener('DOMContentLoaded', function() {
+        const genreTags = document.querySelectorAll('.genre-tag');
+        genreTags.forEach((tag, index) => {
+            tag.style.opacity = '0';
+            tag.style.transform = 'translateY(10px)';
+            setTimeout(() => {
+                tag.style.transition = 'all 0.5s ease';
+                tag.style.opacity = '1';
+                tag.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+    });
+
+    // アクセシビリティ改善：キーボードナビゲーション
+    document.querySelectorAll('.genre-tag, .clickable-item').forEach(element => {
+        element.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+        element.setAttribute('tabindex', '0');
     });
 </script>
 
