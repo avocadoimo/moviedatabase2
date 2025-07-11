@@ -2,97 +2,700 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="日本映画の興行収入データを検索・閲覧できるWebアプリケーション">
+    <meta name="theme-color" content="#1a73e8">
     <title>{% block title %}映画データベース{% endblock %}</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary-color: #1a73e8;
+            --primary-hover: #1558b0;
+            --secondary-color: #34a853;
+            --accent-color: #ea4335;
+            --warning-color: #fbbc04;
+            --background-color: #f9f9f9;
+            --card-background: #fff;
+            --text-color: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
         * {
             box-sizing: border-box;
         }
+
         body {
-            font-family: 'Noto Sans JP', sans-serif;
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
+
+        /* ヘッダー（固定解除版） */
         header {
-            background-color: #fff;
-            border-bottom: 1px solid #ddd;
-            padding: 10px 20px;
+            background-color: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
             text-align: center;
         }
+
+        .logo-link {
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .logo-link:hover {
+            transform: scale(1.05);
+        }
+
         header img {
-            height: 60px;
+            height: 40px;
             cursor: pointer;
+            transition: var(--transition);
         }
-        .nav-buttons {
-            margin-top: 10px;
-        }
-        .nav-buttons a {
-            display: inline-block;
-            margin: 0 10px;
-            padding: 8px 16px;
-            background-color: #1a73e8;
+
+        .logo-text {
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), #1558b0);
             color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 20px;
             border-radius: 8px;
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 8px;
             text-decoration: none;
+        }
+
+        /* ナビゲーションボタン */
+        .nav-buttons {
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 12px;
+            transition: var(--transition);
+            touch-action: manipulation;
+            min-height: 32px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+
+        /* 各ボタンの色分け */
+        .nav-home {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .nav-home:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .nav-database {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+
+        .nav-database:hover {
+            background-color: #2d8f47;
+        }
+
+        .nav-articles {
+            background-color: var(--warning-color);
+            color: #333;
+        }
+
+        .nav-articles:hover {
+            background-color: #f4b400;
+        }
+
+        .nav-chat {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .nav-chat:hover {
+            background-color: #d93025;
+        }
+
+        .nav-trending {
+            background: linear-gradient(135deg, #9c27b0, #673ab7);
+            color: white;
+        }
+
+        .nav-trending:hover {
+            background: linear-gradient(135deg, #8e24aa, #5e35b1);
+        }
+
+        /* バッジ表示 */
+        .nav-button .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #ff4444;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
             font-weight: bold;
-            transition: background-color 0.3s;
+            min-width: 16px;
+            text-align: center;
+            animation: pulse 2s infinite;
         }
-        .nav-buttons a:hover {
-            background-color: #1558b0;
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
+
+        /* アクティブ状態 */
+        .nav-button.active {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        /* ホバーエフェクト */
+        .nav-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-button:hover:before {
+            left: 100%;
+        }
+
+        /* メインコンテンツ */
         main {
-            padding: 20px;
-            max-width: 1000px;
-            margin: auto;
+            padding: 16px;
+            max-width: 1200px;
+            margin: 0 auto;
+            min-height: calc(100vh - 160px);
         }
-        a {
-            text-decoration: none;
-            color: #1a73e8;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
+
+        /* カード */
         .card {
-            background-color: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            padding: 20px;
-            margin-bottom: 20px;
+            background-color: var(--card-background);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 16px;
+            margin-bottom: 16px;
+            transition: var(--transition);
         }
-        .button {
-            display: inline-block;
-            padding: 8px 16px;
-            background-color: #1a73e8;
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        /* ボタン */
+        .button, .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background-color: var(--primary-color);
             color: #fff;
             border: none;
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            touch-action: manipulation;
+            min-height: 44px;
         }
-        .button:hover {
-            background-color: #1558b0;
+
+        .button:hover, .btn:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        /* 通知バナー */
+        .notification-banner {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 13px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification-banner:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: slideRight 3s infinite;
+        }
+
+        @keyframes slideRight {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* シンプル管理者フッター */
+        .admin-footer {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 20px;
+            margin-top: 40px;
+            border-top: 3px solid var(--primary-color);
+        }
+
+        .admin-footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-section {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .admin-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            color: #ecf0f1;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .admin-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .admin-link.authenticated {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            border-color: #2ecc71;
+        }
+
+        .admin-link.authenticated:hover {
+            background: linear-gradient(135deg, #229954, #27ae60);
+        }
+
+        .logout-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .logout-link:hover {
+            background: rgba(231, 76, 60, 0.3);
+            color: white;
+        }
+
+        .copyright-section {
+            font-size: 12px;
+            color: #95a5a6;
+        }
+
+        /* レスポンシブ対応 */
+        @media (min-width: 480px) {
+            .nav-buttons {
+                gap: 8px;
+            }
+            
+            .nav-button {
+                padding: 8px 12px;
+                font-size: 13px;
+                min-height: 36px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .admin-footer-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+        }
+
+        @media (min-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+
+            header {
+                padding: 16px 20px;
+            }
+
+            .logo-text {
+                height: 60px;
+                font-size: 18px;
+            }
+
+            main {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+
+            .nav-button {
+                font-size: 14px;
+                padding: 10px 16px;
+                min-height: 40px;
+            }
+
+            .nav-buttons {
+                gap: 10px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .nav-buttons {
+                gap: 12px;
+            }
+        }
+
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --background-color: #121212;
+                --card-background: #1e1e1e;
+                --text-color: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --border-color: #333;
+                --shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+
+            .nav-articles {
+                color: #000;
+            }
+        }
+
+        /* アクセシビリティ */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* フォーカス表示 */
+        .nav-button:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        /* タッチデバイス用の改善 */
+        @media (hover: none) and (pointer: coarse) {
+            .nav-button {
+                min-height: 44px;
+                padding: 12px 16px;
+            }
+            
+            .nav-button:hover:before {
+                left: -100%;
+            }
+        }
+
+        /* ローディング状態 */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        /* 新機能ハイライト */
+        .new-feature {
+            position: relative;
+        }
+
+        .new-feature:after {
+            content: 'NEW';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: white;
+            font-size: 8px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
         }
     </style>
     {% block head %}{% endblock %}
 </head>
 <body>
-
     <header>
-        <a href="{{ url_for('search') }}">
-            <img src="{{ url_for('static', filename='banner.png') }}" alt="ロゴ">
-        </a>
-        <div class="nav-buttons">
-            <a href="{{ url_for('search') }}"> トップページ</a>
-            <a href="{{ url_for('table_view') }}"> 興行収入データベース</a>
+        <div class="header-content">
+            <a href="{{ url_for('search') }}" class="logo-link">
+                {% if config.get('LOGO_IMAGE') %}
+                    <img src="{{ url_for('static', filename='banner.png') }}" alt="映画データベース" loading="eager">
+                {% else %}
+                    <div class="logo-text">🎬 映画データベース</div>
+                {% endif %}
+            </a>
+            
+            <nav class="nav-buttons" role="navigation" aria-label="メインナビゲーション">
+                <a href="{{ url_for('search') }}" 
+                   class="nav-button nav-home {% if request.endpoint == 'search' %}active{% endif %}" 
+                   aria-label="ホームページ">
+                    🏠 ホーム
+                </a>
+                
+                <a href="{{ url_for('table_view') }}" 
+                   class="nav-button nav-database {% if request.endpoint == 'table_view' %}active{% endif %}" 
+                   aria-label="データベース一覧">
+                    📊 データベース
+                </a>
+                
+                <a href="{{ url_for('articles') }}" 
+                   class="nav-button nav-articles new-feature {% if request.endpoint == 'articles' %}active{% endif %}" 
+                   aria-label="映画記事・コラム">
+                    📰 記事
+                </a>
+                
+                <a href="{{ url_for('movie_chat') }}" 
+                   class="nav-button nav-chat new-feature {% if request.endpoint == 'movie_chat' %}active{% endif %}" 
+                   aria-label="映画分析AIチャット">
+                    🤖 AI分析
+                </a>
+                
+                <a href="{{ url_for('sns_ranking') }}" 
+                   class="nav-button nav-trending new-feature {% if request.endpoint == 'sns_ranking' %}active{% endif %}" 
+                   aria-label="SNSトレンドランキング">
+                    📈 トレンド
+                    <span class="badge" id="trendingCount">5</span>
+                </a>
+            </nav>
         </div>
     </header>
 
-    <main>
+    <!-- 通知バナー（必要に応じて表示） -->
+    {% if show_notification %}
+    <div class="notification-banner" id="notificationBanner">
+        🎉 新機能追加！AIチャットでお気に入りの映画を見つけよう
+    </div>
+    {% endif %}
+
+    <main role="main">
         {% block content %}{% endblock %}
     </main>
 
+    <footer class="admin-footer">
+        <div class="admin-footer-content">
+            <div class="admin-section">
+                {% if session.get('admin_authenticated') %}
+                <a href="{{ url_for('admin_dashboard') }}" class="admin-link authenticated">
+                    🛠️ 管理画面
+                </a>
+                <a href="{{ url_for('admin_logout') }}" class="logout-link">
+                    🚪 ログアウト
+                </a>
+                {% else %}
+                <a href="{{ url_for('admin_login') }}" class="admin-link">
+                    🔐 管理者ログイン
+                </a>
+                {% endif %}
+            </div>
+            
+            <div class="copyright-section">
+                © 2025 映画データベース
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // ナビゲーション関連のスクリプト
+        document.addEventListener('DOMContentLoaded', function() {
+            // アクティブナビゲーションの設定
+            const currentPath = window.location.pathname;
+            const navButtons = document.querySelectorAll('.nav-button');
+            
+            navButtons.forEach(button => {
+                if (button.getAttribute('href') === currentPath) {
+                    button.classList.add('active');
+                }
+            });
+
+            // トレンドカウンターの更新
+            updateTrendingCount();
+
+            // 通知バナーの自動非表示
+            const banner = document.getElementById('notificationBanner');
+            if (banner) {
+                setTimeout(() => {
+                    banner.style.opacity = '0';
+                    setTimeout(() => {
+                        banner.style.display = 'none';
+                    }, 300);
+                }, 5000);
+            }
+
+            // ナビゲーションボタンのキーボード操作
+            navButtons.forEach(button => {
+                button.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+            });
+        });
+
+        // トレンドカウンターの更新
+        function updateTrendingCount() {
+            fetch('/api/trending-update')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('trendingCount');
+                    if (badge && data.length > 0) {
+                        badge.textContent = data.length;
+                        badge.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.log('トレンドデータの取得に失敗:', error);
+                });
+        }
+
+        // PWA関連の処理
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/static/sw.js');
+                    console.log('Service Worker registered successfully');
+                } catch (error) {
+                    console.log('Service Worker registration failed:', error);
+                }
+            });
+        }
+
+        // オンライン/オフライン状態の監視
+        function updateConnectionStatus() {
+            const navButtons = document.querySelectorAll('.nav-button');
+            
+            if (!navigator.onLine) {
+                navButtons.forEach(button => {
+                    if (button.href.includes('chat') || button.href.includes('trending')) {
+                        button.style.opacity = '0.5';
+                        button.title = 'オフライン時は利用できません';
+                    }
+                });
+            } else {
+                navButtons.forEach(button => {
+                    button.style.opacity = '1';
+                    button.title = '';
+                });
+            }
+        }
+
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        updateConnectionStatus();
+
+        // ダブルタップズーム防止
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // アナリティクス（ページビュー）
+        function trackPageView(pageName) {
+            // Google Analytics や他の分析ツールとの連携
+            if (typeof gtag !== 'undefined') {
+                gtag('config', 'GA_MEASUREMENT_ID', {
+                    page_title: document.title,
+                    page_location: window.location.href
+                });
+            }
+        }
+
+        // ページロード時の分析
+        trackPageView(document.title);
+
+        // エラーハンドリング
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            console.error('Unhandled promise rejection:', e.reason);
+        });
+
+        // パフォーマンス監視
+        if ('performance' in window) {
+            window.addEventListener('load', function() {
+                const perfData = performance.getEntriesByType('navigation')[0];
+                if (perfData && perfData.loadEventEnd - perfData.loadEventStart > 3000) {
+                    console.log('Page load is slow, consider optimizations');
+                }
+            });
+        }
+    </script>
 </body>
 </html>

@@ -134,6 +134,11 @@
         <br><br>
         興収（億円）: <input type="text" name="min_revenue" placeholder="最小" value="{{ request.args.get('min_revenue', '') }}"> ～ 
         <input type="text" name="max_revenue" placeholder="最大" value="{{ request.args.get('max_revenue', '') }}">
+        <br><br>
+        監督: <input type="text" name="director" value="{{ request.args.get('director', '') }}">
+        キャスト: <input type="text" name="actor" value="{{ request.args.get('actor', '') }}">
+        ジャンル: <input type="text" name="genre" value="{{ request.args.get('genre', '') }}" placeholder="アクション、ドラマ等">
+        <br><br>
         <input type="submit" value="検索">
     </form>
 </div>
@@ -208,6 +213,7 @@
             year=args_copy.get('year'),
             title=args_copy.get('title'),
             distributor=args_copy.get('distributor'),
+            category=args_copy.get('category'),  
             min_revenue=args_copy.get('min_revenue'),
             max_revenue=args_copy.get('max_revenue'),
             director=args_copy.get('director'),
@@ -223,6 +229,7 @@
             year=args_copy.get('year'),
             title=args_copy.get('title'),
             distributor=args_copy.get('distributor'),
+            category=args_copy.get('category'), 
             min_revenue=args_copy.get('min_revenue'),
             max_revenue=args_copy.get('max_revenue'),
             director=args_copy.get('director'),
@@ -233,5 +240,6 @@
             sort=sort) }}#results">次へ →</a>
     {% endif %}
 </div>
+
 
 {% endblock %}

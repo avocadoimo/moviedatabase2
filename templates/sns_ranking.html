@@ -1,0 +1,852 @@
+{% extends "base.html" %}
+
+{% block title %}SNSトレンドランキング TOP10 - 映画データベース{% endblock %}
+
+{% block head %}
+<style>
+    .trending-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px;
+        background: linear-gradient(135deg, #9c27b0, #673ab7);
+        color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .trending-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0 0 8px;
+    }
+
+    .trending-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 0 0 16px;
+    }
+
+    /* 日付選択セクション */
+    .date-selector {
+        background: rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+    }
+
+    .date-selector label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 8px;
+        opacity: 0.9;
+    }
+
+    .date-select {
+        background: white;
+        color: #333;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        margin-right: 8px;
+        cursor: pointer;
+    }
+
+    .update-btn {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .update-btn:hover {
+        background: #d93025;
+    }
+
+    /* トップ3の特別表示 */
+    .top-three-section {
+        margin-bottom: 40px;
+    }
+
+    .top-three-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .top-movie-card {
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .top-movie-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .top-movie-content {
+        display: grid;
+        grid-template-columns: 200px 1fr 300px;
+        gap: 20px;
+        padding: 20px;
+        align-items: center;
+    }
+
+    .rank-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        z-index: 10;
+    }
+
+    .rank-1 { background: linear-gradient(135deg, #ffd700, #ffed4e); color: #333; }
+    .rank-2 { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #333; }
+    .rank-3 { background: linear-gradient(135deg, #cd7f32, #deb887); color: white; }
+
+    .movie-poster {
+        width: 150px;
+        height: 200px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 48px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .movie-poster img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    .poster-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        font-size: 48px;
+    }
+
+    .movie-info-section {
+        flex: 1;
+        padding: 0 20px;
+    }
+
+    .movie-title-large {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 12px;
+        color: var(--text-color);
+        line-height: 1.2;
+    }
+
+    .movie-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .stat-item {
+        text-align: center;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .stat-number {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .movie-meta-large {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    /* ワードクラウド（実際のレビューから生成） */
+    .word-cloud-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .word-cloud-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: var(--text-color);
+        text-align: center;
+    }
+
+    .word-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        min-height: 120px;
+        position: relative;
+    }
+
+    .word-cloud-item {
+        padding: 4px 8px;
+        border-radius: 12px;
+        background: rgba(26, 115, 232, 0.1);
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: var(--transition);
+        cursor: pointer;
+        animation: fadeInScale 0.8s ease-out forwards;
+        opacity: 0;
+        position: relative;
+    }
+
+    .word-cloud-item:hover {
+        background: var(--primary-color);
+        color: white;
+        transform: scale(1.05);
+    }
+
+    .word-cloud-item:nth-child(1) { animation-delay: 0.1s; }
+    .word-cloud-item:nth-child(2) { animation-delay: 0.2s; }
+    .word-cloud-item:nth-child(3) { animation-delay: 0.3s; }
+    .word-cloud-item:nth-child(4) { animation-delay: 0.4s; }
+    .word-cloud-item:nth-child(5) { animation-delay: 0.5s; }
+    .word-cloud-item:nth-child(6) { animation-delay: 0.6s; }
+
+    .loading-wordcloud {
+        text-align: center;
+        color: var(--text-secondary);
+        font-style: italic;
+    }
+
+    /* 4位以降のランキング */
+    .ranking-section {
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .ranking-header {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 16px 20px;
+        font-weight: 600;
+        display: grid;
+        grid-template-columns: 60px 80px 1fr auto auto;
+        gap: 16px;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .ranking-item {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        display: grid;
+        grid-template-columns: 60px 80px 1fr auto auto;
+        gap: 16px;
+        align-items: center;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .ranking-item:last-child {
+        border-bottom: none;
+    }
+
+    .ranking-item:hover {
+        background: #f8f9fa;
+        transform: translateX(4px);
+    }
+
+    .rank-number {
+        font-size: 18px;
+        font-weight: 700;
+        text-align: center;
+        color: var(--primary-color);
+    }
+
+    .rank-4, .rank-5, .rank-6, .rank-7, .rank-8, .rank-9, .rank-10 {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8e8e93, #c7c7cc);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+    }
+
+    .ranking-poster {
+        width: 60px;
+        height: 80px;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+    }
+
+    .ranking-poster img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .movie-title-small {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--text-color);
+        margin-bottom: 4px;
+    }
+
+    .movie-meta-small {
+        font-size: 12px;
+        color: var(--text-secondary);
+    }
+
+    .post-count {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--secondary-color);
+        text-align: center;
+    }
+
+    .trend-change {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .trend-up { background: #e8f5e8; color: #2e7d32; }
+    .trend-down { background: #ffebee; color: #d32f2f; }
+    .trend-new { background: #fff3e0; color: #f57c00; }
+    .trend-neutral { background: #f5f5f5; color: var(--text-secondary); }
+
+    /* 統計サマリー */
+    .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        padding: 20px;
+        text-align: center;
+        box-shadow: var(--shadow);
+    }
+
+    .summary-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+    }
+
+    .summary-number {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 4px;
+    }
+
+    .summary-label {
+        font-size: 14px;
+        color: var(--text-secondary);
+    }
+
+    /* レスポンシブ対応 */
+    @media (max-width: 1023px) {
+        .top-movie-content {
+            grid-template-columns: 120px 1fr;
+            gap: 16px;
+        }
+
+        .word-cloud-section {
+            display: none;
+        }
+
+        .movie-poster {
+            width: 100px;
+            height: 140px;
+            font-size: 32px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .top-movie-content {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .movie-poster {
+            width: 120px;
+            height: 160px;
+            margin: 0 auto;
+        }
+
+        .ranking-header,
+        .ranking-item {
+            grid-template-columns: 40px 50px 1fr auto;
+            gap: 12px;
+            padding: 12px 16px;
+        }
+
+        .ranking-poster {
+            width: 40px;
+            height: 55px;
+            font-size: 16px;
+        }
+
+        .post-count,
+        .trend-change {
+            font-size: 12px;
+        }
+
+        .stats-summary {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* ダークモード */
+    @media (prefers-color-scheme: dark) {
+        .ranking-item:hover {
+            background: #333;
+        }
+
+        .stat-item,
+        .word-cloud-section {
+            background: #2a2a2a;
+        }
+
+        .word-cloud-item {
+            background: rgba(26, 115, 232, 0.2);
+        }
+
+        .trend-up { background: #1b5e20; color: #81c784; }
+        .trend-down { background: #b71c1c; color: #ef5350; }
+        .trend-new { background: #e65100; color: #ffb74d; }
+        .trend-neutral { background: #333; }
+    }
+
+    /* アニメーション */
+    @keyframes fadeInScale {
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .ranking-item {
+        opacity: 0;
+        animation: fadeInUp 0.5s ease-out forwards;
+    }
+
+    .ranking-item:nth-child(2) { animation-delay: 0.1s; }
+    .ranking-item:nth-child(3) { animation-delay: 0.2s; }
+    .ranking-item:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes fadeInUp {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* エラー表示 */
+    .error-message {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+        background: var(--card-background);
+        border-radius: var(--border-radius);
+        margin: 20px 0;
+    }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="trending-header">
+    <h1 class="trending-title">📈 SNS投稿数ランキング TOP10</h1>
+    <p class="trending-subtitle">映画.comレビューから生成されたワードクラウド付き</p>
+    
+    <div class="date-selector">
+        <label for="dateSelect">📅 日付を選択:</label>
+        <select id="dateSelect" class="date-select" onchange="updateTrending()">
+            {% for date in available_dates %}
+            <option value="{{ date }}" {% if date == selected_date %}selected{% endif %}>
+                {{ date }}
+            </option>
+            {% endfor %}
+        </select>
+        <button class="update-btn" onclick="updateTrending()">更新</button>
+    </div>
+</div>
+
+{% if error %}
+<div class="error-message">
+    <h3>⚠️ エラー</h3>
+    <p>{{ error }}</p>
+</div>
+{% elif trending_movies %}
+
+<!-- 統計サマリー -->
+<div class="stats-summary">
+    <div class="summary-card">
+        <div class="summary-icon">🎬</div>
+        <div class="summary-number">{{ trending_movies|length }}</div>
+        <div class="summary-label">ランクイン映画数</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon">💬</div>
+        <div class="summary-number">{{ "{:,}".format(trending_movies|sum(attribute='post_count')) }}</div>
+        <div class="summary-label">総投稿数</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon">👑</div>
+        <div class="summary-number">{{ "{:,}".format(trending_movies[0].post_count) if trending_movies else 0 }}</div>
+        <div class="summary-label">1位投稿数</div>
+    </div>
+    <div class="summary-card">
+        <div class="summary-icon">📊</div>
+        <div class="summary-number">{{ "{:,}".format((trending_movies|sum(attribute='post_count') / trending_movies|length)|int) if trending_movies else 0 }}</div>
+        <div class="summary-label">平均投稿数</div>
+    </div>
+</div>
+
+<!-- トップ3の特別表示 -->
+{% if trending_movies[:3] %}
+<div class="top-three-section">
+    <h2 style="text-align: center; margin-bottom: 20px; color: var(--text-color);">🏆 トップ3</h2>
+    
+    <div class="top-three-grid">
+        {% for movie in trending_movies[:3] %}
+        <div class="top-movie-card" onclick="goToMovieDetail('{{ movie.title }}', {{ movie.movie_data.id if movie.movie_data else 'null' }})">
+            <div class="rank-badge rank-{{ movie.rank }}">{{ movie.rank }}</div>
+            
+            <div class="top-movie-content">
+                <!-- ポスター画像（強化版） -->
+                <div class="movie-poster">
+                    {% if movie.movie_data and movie.movie_data.movie_id %}
+                        <img src="{{ url_for('static', filename='posters/' ~ movie.movie_data.movie_id|string ~ '.jpg') }}" 
+                             alt="{{ movie.title }}"
+                             onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=&quot;poster-placeholder&quot;>🎬</div>';">
+                    {% else %}
+                        <div class="poster-placeholder">🎬</div>
+                    {% endif %}
+                </div>
+                
+                <!-- 映画情報 -->
+                <div class="movie-info-section">
+                    <h3 class="movie-title-large">{{ movie.title }}</h3>
+                    
+                    <div class="movie-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ "{:,}".format(movie.post_count) }}</span>
+                            <div class="stat-label">投稿数</div>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ "%.1f"|format(movie.trend_score) }}</span>
+                            <div class="stat-label">スコア</div>
+                        </div>
+                    </div>
+                    
+                    <div class="movie-meta-large">
+                        {% if movie.movie_data %}
+                            <span>💰 {{ movie.movie_data.revenue }}億円</span>
+                            <span>📅 {{ movie.movie_data.year }}年</span>
+                            {% if movie.movie_data.director %}
+                                <span>🎬 {{ movie.movie_data.director }}</span>
+                            {% endif %}
+                            <span>📂 {{ movie.movie_data.category }}</span>
+                        {% else %}
+                            <span>🔍 データベース未登録</span>
+                        {% endif %}
+                        <span class="trend-change {% if movie.change == 'NEW' %}trend-new{% elif movie.change.startswith('+') %}trend-up{% elif movie.change.startswith('-') %}trend-down{% else %}trend-neutral{% endif %}">
+                            {{ movie.change }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- ワードクラウド（映画.comレビューから生成） -->
+                <div class="word-cloud-section">
+                    <div class="word-cloud-title">💭 レビューキーワード</div>
+                    <div class="word-cloud" id="wordcloud-{{ movie.rank }}">
+                        {% if movie.word_cloud %}
+                            {% for word in movie.word_cloud %}
+                            <span class="word-cloud-item" 
+                                  style="font-size: {{ word.size }}px; color: {{ word.color }};"
+                                  title="出現回数: {{ word.count }}回">
+                                {{ word.text }}
+                            </span>
+                            {% endfor %}
+                        {% else %}
+                            <div class="loading-wordcloud" id="loading-{{ movie.rank }}">
+                                <div class="loading-spinner"></div>
+                                <div>レビューを分析中...</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 4位以降のランキング -->
+{% if trending_movies[3:] %}
+<div class="ranking-section">
+    <div class="ranking-header">
+        <span>順位</span>
+        <span>ポスター</span>
+        <span>映画タイトル</span>
+        <span>投稿数</span>
+        <span>変動</span>
+    </div>
+    
+    {% for movie in trending_movies[3:] %}
+    <div class="ranking-item" onclick="goToMovieDetail('{{ movie.title }}', {{ movie.movie_data.id if movie.movie_data else 'null' }})">
+        <div class="rank-number rank-{{ movie.rank }}">{{ movie.rank }}</div>
+        
+        <!-- 小さなポスター画像 -->
+        <div class="ranking-poster">
+            {% if movie.movie_data and movie.movie_data.movie_id %}
+                <img src="{{ url_for('static', filename='posters/' ~ movie.movie_data.movie_id|string ~ '.jpg') }}" 
+                     alt="{{ movie.title }}"
+                     onerror="this.style.display='none'; this.parentNode.innerHTML='🎬';">
+            {% else %}
+                🎬
+            {% endif %}
+        </div>
+        
+        <div>
+            <div class="movie-title-small">{{ movie.title }}</div>
+            <div class="movie-meta-small">
+                {% if movie.movie_data %}
+                    💰 {{ movie.movie_data.revenue }}億円 | 📅 {{ movie.movie_data.year }}年
+                    {% if movie.movie_data.director %} | 🎬 {{ movie.movie_data.director }}{% endif %}
+                {% else %}
+                    🔍 データベース未登録
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="post-count">{{ "{:,}".format(movie.post_count) }}</div>
+        
+        <div class="trend-change {% if movie.change == 'NEW' %}trend-new{% elif movie.change.startswith('+') %}trend-up{% elif movie.change.startswith('-') %}trend-down{% else %}trend-neutral{% endif %}">
+            {{ movie.change }}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="error-message">
+    <h3>📊 データなし</h3>
+    <p>選択された日付のトレンドデータがありません。</p>
+</div>
+{% endif %}
+
+<!-- ローディング表示 -->
+<div id="loadingDiv" class="loading" style="display: none;">
+    <div class="loading-spinner"></div>
+    <p>データを読み込み中...</p>
+</div>
+
+<script>
+// トレンドデータの更新
+async function updateTrending() {
+    const dateSelect = document.getElementById('dateSelect');
+    const selectedDate = dateSelect.value;
+    const loadingDiv = document.getElementById('loadingDiv');
+    
+    loadingDiv.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/trending-update?date=${selectedDate}`);
+        if (response.ok) {
+            window.location.href = `/trending?date=${selectedDate}`;
+        } else {
+            throw new Error('データの取得に失敗しました');
+        }
+    } catch (error) {
+        console.error('更新エラー:', error);
+        alert('データの更新に失敗しました');
+    } finally {
+        loadingDiv.style.display = 'none';
+    }
+}
+
+// 映画詳細ページへの遷移
+function goToMovieDetail(movieTitle, movieId) {
+    if (movieId && movieId !== 'null') {
+        window.location.href = `/movie/${movieId}`;
+    } else {
+        window.location.href = `/search?title=${encodeURIComponent(movieTitle)}`;
+    }
+}
+
+// 非同期でワードクラウドを読み込む（リアルタイムスクレイピング）
+async function loadWordCloudAsync(movieTitle, rank) {
+    const loadingElement = document.getElementById(`loading-${rank}`);
+    const wordcloudElement = document.getElementById(`wordcloud-${rank}`);
+    
+    if (!loadingElement) return;
+    
+    try {
+        const response = await fetch(`/api/word-cloud/${encodeURIComponent(movieTitle)}`);
+        const wordCloudData = await response.json();
+        
+        if (wordCloudData && wordCloudData.length > 0) {
+            let wordsHtml = '';
+            wordCloudData.forEach((word, index) => {
+                wordsHtml += `<span class="word-cloud-item" 
+                                   style="font-size: ${word.size}px; color: ${word.color}; animation-delay: ${index * 0.1}s;"
+                                   title="出現回数: ${word.count}回">
+                                ${word.text}
+                              </span>`;
+            });
+            wordcloudElement.innerHTML = wordsHtml;
+        } else {
+            wordcloudElement.innerHTML = '<div class="loading-wordcloud">レビューデータなし</div>';
+        }
+    } catch (error) {
+        console.error(`ワードクラウド取得エラー (${movieTitle}):`, error);
+        wordcloudElement.innerHTML = '<div class="loading-wordcloud">取得失敗</div>';
+    }
+}
+
+// ページ読み込み時にワードクラウドを非同期読み込み
+document.addEventListener('DOMContentLoaded', function() {
+    // トップ3のワードクラウドがない場合のみ非同期読み込み
+    {% for movie in trending_movies[:3] %}
+    {% if not movie.word_cloud %}
+    setTimeout(() => {
+        loadWordCloudAsync('{{ movie.title }}', {{ movie.rank }});
+    }, {{ (movie.rank - 1) * 2000 }}); // 2秒間隔で読み込み
+    {% endif %}
+    {% endfor %}
+});
+
+// キーボードナビゲーション
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowLeft') {
+        const dateSelect = document.getElementById('dateSelect');
+        const currentIndex = dateSelect.selectedIndex;
+        if (currentIndex < dateSelect.options.length - 1) {
+            dateSelect.selectedIndex = currentIndex + 1;
+            updateTrending();
+        }
+    } else if (e.key === 'ArrowRight') {
+        const dateSelect = document.getElementById('dateSelect');
+        const currentIndex = dateSelect.selectedIndex;
+        if (currentIndex > 0) {
+            dateSelect.selectedIndex = currentIndex - 1;
+            updateTrending();
+        }
+    }
+});
+
+// ランキングアイテムのホバーエフェクト
+document.querySelectorAll('.ranking-item, .top-movie-card').forEach(item => {
+    item.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+    });
+    
+    item.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+    });
+});
+
+// ワードクラウドのインタラクション
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('word-cloud-item')) {
+        e.stopPropagation();
+        const word = e.target.textContent;
+        window.location.href = `/search?title=${encodeURIComponent(word)}`;
+    }
+});
+
+console.log('SNSトレンドランキング TOP10 ページが読み込まれました');
+</script>
+
+{% endblock %}

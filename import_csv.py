@@ -25,9 +25,10 @@ class Movie(db.Model):
     scriptwriter = db.Column(db.String(200))
     producer = db.Column(db.String(200))
     copyright = db.Column(db.String(200))
+    genre = db.Column(db.String(200))
 
 with app.app_context():
-    csv_path = r"C:\Users\2501016\Box\0000_マイフォルダ\自習用\movie_app\【詳細付き】興行収入データベース（2000-2024年）.csv"
+    csv_path = r"C:\Users\2501016\Box\0000_マイフォルダ\自習用\movie_app ver.2\【詳細付き】興行収入データベース（2000-2024年）.csv"
 
     print("✅ 現在の作業フォルダ:", os.getcwd())
     print("✅ 読み込むCSVファイル:", csv_path)

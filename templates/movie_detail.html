@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}{{ movie.title }}{% endblock %}
+{% block title %}{{ movie.title }} - 映画データベース{% endblock %}
 
 {% block head %}
 <style>
@@ -92,9 +92,13 @@
     <div class="section">
         <h2>配給会社</h2>
         <p>
-            {% for dist in movie.distributor.split('、') %}
-                <a href="{{ url_for('search', distributor=dist.strip()) }}">{{ dist.strip() }}</a>{% if not loop.last %}、{% endif %}
-            {% endfor %}
+            {% if movie.distributor %}
+                {% for dist in movie.distributor.split('、') %}
+                    <a href="{{ url_for('search', distributor=dist.strip()) }}">{{ dist.strip() }}</a>{% if not loop.last %}、{% endif %}
+                {% endfor %}
+            {% else %}
+                情報なし
+            {% endif %}
         </p>
     </div>
 
@@ -117,10 +121,10 @@
     </div>
     {% endif %}
 
-    {% if movie.original %}
+    {% if movie.author %}
     <div class="section">
         <h2>原作</h2>
-        <p>{{ movie.original }}</p>
+        <p>{{ movie.author }}</p>
     </div>
     {% endif %}
 
@@ -142,6 +146,17 @@
     </div>
     {% endif %}
 
+    <!-- ジャンル情報（存在しない場合の安全な処理） -->
+    {% if movie.genre %}
+    <div class="section">
+        <h2>ジャンル</h2>
+        <p>
+            {% for genre_item in movie.genre.split(',') %}
+                <span class="genre-tag">{{ genre_item.strip() }}</span>{% if not loop.last %}、{% endif %}
+            {% endfor %}
+        </p>
+    </div>
+    {% endif %}
 
 </div>
 
